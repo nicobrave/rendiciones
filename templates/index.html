@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rendiciones Constructora</title>
+    <link rel="stylesheet" href="static/style.css">
+
+    <link rel="stylesheet" href="static/style.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyArsNiHEoJtkGXQhKteuMKshap5f42kiII",
+            authDomain: "rendiciones-5b817.firebaseapp.com",
+            projectId: "rendiciones-5b817",
+            storageBucket: "rendiciones-5b817.appspot.com",
+            messagingSenderId: "913245880225",
+            appId: "1:913245880225:web:39d746580ac871a04e15e0"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Función para registrar usuarios
+        function register() {
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    alert('Registro exitoso');
+                    window.location.href = '/dashboard';
+                })
+                .catch((error) => {
+                    alert(error.message);
+                });
+        }
+
+        // Función para iniciar sesión
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    alert('Inicio de sesión exitoso');
+                    window.location.href = '/dashboard';
+                })
+                .catch((error) => {
+                    alert(error.message);
+                });
+        }
+
+        // Monitorear el estado de autenticación
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                console.log('Usuario conectado:', user.email);
+            } else {
+                console.log('No hay usuarios conectados');
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Rendiciones Constructora</h1>
+
+    <div id="auth">
+        <h2>Registrarse</h2>
+        <input type="email" id="register-email" placeholder="Correo electrónico">
+        <input type="password" id="register-password" placeholder="Contraseña">
+        <button onclick="register()">Registrar</button>
+
+        <h2>Iniciar Sesión</h2>
+        <input type="email" id="login-email" placeholder="Correo electrónico">
+        <input type="password" id="login-password" placeholder="Contraseña">
+        <button onclick="login()">Iniciar Sesión</button>
+    </div>
+</body>
+</html>

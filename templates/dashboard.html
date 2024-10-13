@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Rendiciones Constructora</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+
+    <link rel="stylesheet" href="static/style.css">
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyArsNiHEoJtkGXQhKteuMKshap5f42kiII",
+            authDomain: "rendiciones-5b817.firebaseapp.com",
+            projectId: "rendiciones-5b817",
+            storageBucket: "rendiciones-5b817.appspot.com",
+            messagingSenderId: "913245880225",
+            appId: "1:913245880225:web:39d746580ac871a04e15e0"
+        };
+    
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+    
+        let currentUser = null;
+    
+        // Verificar el estado de autenticación
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;  // Guardar el usuario autenticado
+                document.getElementById('dashboard-content').style.display = 'block';
+                document.getElementById('auth-message').style.display = 'none';
+            } else {
+                window.location.href = '/login';  // Redirigir al login si no hay usuario autenticado
+            }
+        });
+    
+        // Subir la imagen de la rendición a Firebase Storage
+        function uploadFile() {
+            const file = document.getElementById("rendicion-file").files[0];
+            const projectId = document.getElementById("project-id").value;
+    
+            if (!file || !projectId) {
+                alert("Por favor, selecciona una imagen y asigna un ID de proyecto.");
+                return;
+            }
+    
+            // Crear una referencia en Firebase Storage
+            const storageRef = firebase.storage().ref(`rendiciones/${projectId}/${file.name}`);
+    
+            // Subir el archivo
+            const uploadTask = storageRef.put(file);
+    
+            // Monitorear el progreso de la subida
+            uploadTask.on(
+                "state_changed",
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    console.log("Subiendo: " + progress + "%");
+                },
+                (error) => {
+                    alert("Error al subir la imagen: " + error.message);
+                },
+                () => {
+                    // Subida completada con éxito
+                    uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                        alert("Imagen subida exitosamente. URL: " + downloadURL);
+                        console.log("URL del archivo: " + downloadURL);
+    
+                        if (currentUser) {
+                            // Iniciar procesamiento con Google Vision y guardar en Google Sheets
+                            currentUser.getIdToken(true).then(function(idToken) {
+                                fetch('/upload', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${idToken}` // Incluir "Bearer" antes del token
+                                    },
+                                    body: JSON.stringify({
+                                        uid: currentUser.uid,  // Obtener el UID del usuario autenticado
+                                        email: currentUser.email,  // Obtener el email del usuario autenticado
+                                        project_id: projectId,
+                                        image_url: downloadURL
+                                    })
+                                }).then(response => response.json())
+                                .then(data => {
+                                    if (data.message) {
+                                        alert(data.message);
+                                    } else {
+                                        alert("Error en el procesamiento: " + data.message);
+                                    }
+                                }).catch(function(error) {
+                                    console.error('Error en la solicitud fetch:', error);
+                                });
+                            }).catch(function(error) {
+                                console.error('Error obteniendo el token:', error);
+                            });
+                        } else {
+                            console.error("Usuario no autenticado.");
+                        }
+                    });
+                }
+            );
+        }
+    </script>
+    
+</head>
+<body>
+    <h1>Dashboard - Rendiciones Constructora</h1>
+
+    <!-- Mensaje de inicio de sesión requerido -->
+    <div id="auth-message">
+        <p>Por favor, inicia sesión para acceder al dashboard.</p>
+    </div>
+
+    <!-- Contenido del dashboard -->
+    <div id="dashboard-content" style="display: none;">
+        <h2>Subir Fotos de Rendiciones</h2>
+        <label for="project-id">ID del Proyecto:</label>
+        <input type="text" id="project-id" placeholder="Ingrese el ID del Proyecto">
+        
+        <br><br>
+        <label for="rendicion-file">Selecciona la foto de la rendición:</label>
+        <input type="file" id="rendicion-file" accept="image/*">
+        
+        <br><br>
+        <button onclick="uploadFile()">Subir Rendición</button>
+    </div>
+</body>
+</html>

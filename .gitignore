@@ -1,0 +1,4 @@
+# .gitignore
+/env
+app/credentials.json
+app/firebase_credentials.json
