@@ -22,15 +22,7 @@ firebase_credentials_info = json.loads(os.environ['FIREBASE_CREDENTIALS'])
 firebase_cred = credentials.Certificate(firebase_credentials_info)
 firebase_admin.initialize_app(firebase_cred)
 
-# Inicializar la app de Firebase Admin SDK
-cred = credentials.Certificate("app/rendiciones-5b817-firebase-adminsdk-sq4uh-590dca77e5.json")
-firebase_admin.initialize_app(cred)
-
 app = Flask(__name__)
-
-# Inicializar Google Vision Client
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "app/vision-api-credentials.json"
-client = vision.ImageAnnotatorClient()
 
 # Configuración de Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
