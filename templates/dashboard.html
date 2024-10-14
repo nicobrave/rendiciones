@@ -72,7 +72,7 @@
                         if (currentUser) {
                             // Iniciar procesamiento con Google Vision y guardar en Google Sheets
                             currentUser.getIdToken(true).then(function(idToken) {
-                                fetch('/upload', {
+                                fetch('https://rendiciones.onrender.com/upload', {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
