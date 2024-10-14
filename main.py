@@ -1,27 +1,16 @@
+import os
+import sys
+import json
+import re
 import requests
+from flask import Flask, request, jsonify, render_template
+import firebase_admin
+from firebase_admin import auth, credentials as firebase_credentials
 from google.cloud import vision
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-import os
-import re
-import firebase_admin
-from firebase_admin import auth, credentials
-from flask import Flask, request, jsonify, render_template
-import os
-import json
-from google.oauth2.service_account import Credentials
-from firebase_admin import credentials
 
-# Leer credenciales de Google Vision desde variable de entorno
-google_credentials_info = json.loads(os.environ['GOOGLE_CREDENTIALS'])
-google_credentials = Credentials.from_service_account_info(google_credentials_info)
-client = vision.ImageAnnotatorClient(credentials=google_credentials)
-
-# Leer credenciales de Firebase desde variable de entorno
-firebase_credentials_info = json.loads(os.environ['FIREBASE_CREDENTIALS'])
-firebase_cred = credentials.Certificate(firebase_credentials_info)
-firebase_admin.initialize_app(firebase_cred)
-
+# Inicializar la aplicación Flask
 app = Flask(__name__)
 
 # Configuración de Google Sheets API
@@ -29,9 +18,43 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SPREADSHEET_ID = '1BV86uBkOr1QST1GviKLCfAxNs15VOEIQS8IXM5vie8E'
 RANGE_NAME = 'Sheet1!A:J'
 
-# Cargar las credenciales del archivo JSON
-creds = Credentials.from_service_account_file('app/sheets-api-credentials.json', scopes=SCOPES)
-service = build('sheets', 'v4', credentials=creds)
+# Inicializar credenciales de Google
+def initialize_google_credentials():
+    try:
+        credentials_json = os.environ.get('GOOGLE_CREDENTIALS')
+        if not credentials_json:
+            raise ValueError("La variable de entorno 'GOOGLE_CREDENTIALS' no está configurada.")
+        google_credentials_info = json.loads(credentials_json)
+        credentials = Credentials.from_service_account_info(google_credentials_info, scopes=SCOPES)
+        print("Credenciales de Google inicializadas correctamente.")
+        return credentials
+    except Exception as e:
+        print(f"Error al cargar las credenciales de Google: {e}")
+        sys.exit(1)
+
+google_credentials = initialize_google_credentials()
+
+# Inicializar cliente de Google Vision
+client = vision.ImageAnnotatorClient(credentials=google_credentials)
+
+# Inicializar cliente de Google Sheets
+service = build('sheets', 'v4', credentials=google_credentials)
+
+# Inicializar Firebase
+def initialize_firebase():
+    try:
+        credentials_json = os.environ.get('FIREBASE_CREDENTIALS')
+        if not credentials_json:
+            raise ValueError("La variable de entorno 'FIREBASE_CREDENTIALS' no está configurada.")
+        firebase_credentials_info = json.loads(credentials_json)
+        firebase_cred = firebase_credentials.Certificate(firebase_credentials_info)
+        firebase_admin.initialize_app(firebase_cred)
+        print("Firebase inicializado correctamente.")
+    except Exception as e:
+        print(f"Error al cargar las credenciales de Firebase: {e}")
+        sys.exit(1)
+
+initialize_firebase()
 
 # Ruta principal (login y registro)
 @app.route('/')

@@ -1,11 +1,26 @@
-from google.cloud import vision, storage
 import os
+import sys
+import json
 import requests
+from google.cloud import vision, storage
+from google.oauth2.service_account import Credentials
 
-# Inicializar Google Vision Client y Storage Client
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "app/vision-api-credentials.json"
-vision_client = vision.ImageAnnotatorClient()
-storage_client = storage.Client()
+def initialize_google_clients():
+    try:
+        credentials_json = os.environ.get('GOOGLE_CREDENTIALS')
+        if not credentials_json:
+            raise ValueError("La variable de entorno 'GOOGLE_CREDENTIALS' no está configurada.")
+        google_credentials_info = json.loads(credentials_json)
+        google_credentials = Credentials.from_service_account_info(google_credentials_info)
+        vision_client = vision.ImageAnnotatorClient(credentials=google_credentials)
+        storage_client = storage.Client(credentials=google_credentials)
+        print("Clientes de Google Vision API y Storage inicializados correctamente.")
+        return vision_client, storage_client
+    except Exception as e:
+        print(f"Error al cargar las credenciales de Google: {e}")
+        sys.exit(1)
+
+vision_client, storage_client = initialize_google_clients()
 
 def process_receipt(bucket_name, file_name):
     # Descargar la imagen desde Firebase Storage
